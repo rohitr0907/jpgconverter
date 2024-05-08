@@ -1,7 +1,7 @@
 import * as React from 'react';
 import Box from '@mui/material/Box';
 import { Button, Typography } from '@mui/material';
-import axios from 'axios'
+import axios from 'axios';
 
 export default function BoxBasic() {
   const [selectedFile, setSelectedFile] = React.useState(null);
@@ -16,38 +16,33 @@ export default function BoxBasic() {
     setSelectedFile(file);
   };
 
-  const handleUploadAndDownload = () => {
+  const handleUploadAndDownload = async () => {
     if (!selectedFile) {
       console.error('No file selected.');
       return;
     }
 
-    const formData = new FormData();
-    formData.append('file', selectedFile);
+    try {
+      const formData = new FormData();
+      formData.append('image', selectedFile);
+      
+      const response = await axios.post('https://jpgconverter.azurewebsites.net/convert', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        responseType: 'blob',
+      });
 
-    axios.post('https://jpgconverter.azurewebsites.net/convert', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      },
-      responseType: 'blob' // Tell Axios to expect a blob response
-    })
-    .then(response => {
-      // Create object URL for blob
-      const url = URL.createObjectURL(response.data);
-      // Create a temporary link element
+      const downloadUrl = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', 'converted_image.jpg');
-      // Simulate click on the link to trigger download
+      link.href = downloadUrl;
+      link.setAttribute('download', 'file.jpg');
       document.body.appendChild(link);
       link.click();
-      // Clean up
-      URL.revokeObjectURL(url);
-      document.body.removeChild(link);
-    })
-    .catch(error => {
-      console.error('Error downloading image:', error);
-    });
+      link.remove();
+    } catch (error) {
+      console.error('Error uploading file:', error);
+    }
   };
 
   return (
